@@ -3,7 +3,7 @@ import React from "react";
 
 import Home from "../pages/home/Home";
 import Login from "../pages/login/Login";
-import Map from "../pages/map/Map";
+import Explore from "../pages/explore/Explore";
 
 const router = createBrowserRouter([
   {
@@ -11,8 +11,8 @@ const router = createBrowserRouter([
     element: <Home />,
   },
   {
-    path: "/map",
-    element: <Map />,
+    path: "/explore",
+    element: <Explore />,
   },
   {
     path: "/login",

@@ -1,21 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import Navbar from "../../components/navbar/Navbar";
 
 const Home = () => {
   return (
     <div>
+      <Navbar />
+      <hr />
       <h1>Home Page</h1>
-      <ul>
-        <li>
-          <Link to="/">首頁</Link>
-        </li>
-        <li>
-          <Link to="/map">地圖</Link>
-        </li>
-        <li>
-          <Link to="/login">登入</Link>
-        </li>
-      </ul>
     </div>
   );
 };
