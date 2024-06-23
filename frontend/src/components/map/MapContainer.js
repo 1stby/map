@@ -9,7 +9,7 @@ import { Point, LineString } from "ol/geom";
 import { Feature } from "ol";
 import { Style, Icon, Text, Fill, Stroke } from "ol/style";
 import "ol/ol.css";
-import "./Map.css";
+import styles from "./MapStyles.module.css";
 
 const MapContainer = () => {
   const [map, setMap] = useState();
@@ -215,21 +215,21 @@ const MapContainer = () => {
   };
 
   return (
-    <div className="map-container">
-      <div ref={mapElement} className="map"></div>
-      <div className="dashboard">
-        <button className="mark-button" onClick={toggleMarking}>
+    <div className={styles.mapContainer}>
+      <div ref={mapElement} className={styles.map}></div>
+      <div className={styles.dashBoard}>
+        <button className={styles.markButton} onClick={toggleMarking}>
           {isMarking ? "取消標記" : "開始標記"}
         </button>
         {markers.length === 2 && !route && (
-          <button className="route-button" onClick={calculateRoute}>
+          <button className={styles.routeButton} onClick={calculateRoute}>
             計算路線
           </button>
         )}
       </div>
 
       {route && (
-        <div className="route-info">
+        <div className={styles.routeInfo}>
           <p>距離: {distance.toFixed(2)} km</p>
           <button onClick={clearRoute}>清除路線</button>
           <h3>路線指示：</h3>
@@ -270,7 +270,7 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
     }
   };
   return (
-    <div className="marker-description">
+    <div className={styles.markerDescription}>
       <h3>編輯標記</h3>
 
       <input
@@ -286,7 +286,7 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
       />
       <button onClick={handleSave}>保存</button>
       <button onClick={onCancel}>取消</button>
-      <button onClick={handleDelete} className="delete-button">
+      <button onClick={handleDelete} className={styles.deleteButton}>
         刪除標記
       </button>
     </div>
