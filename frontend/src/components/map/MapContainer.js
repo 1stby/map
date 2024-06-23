@@ -18,6 +18,7 @@ const MapContainer = () => {
   const [editingMarker, setEditingMarker] = useState(null);
   const [route, setRoute] = useState(null);
   const [distance, setDistance] = useState(null);
+  const [routeInstructions, setRouteInstructions] = useState([]);
   const mapElement = useRef();
 
   useEffect(() => {
@@ -76,7 +77,8 @@ const MapContainer = () => {
       new Style({
         image: new Icon({
           anchor: [0.5, 1],
-          src: "https://openlayers.org/en/latest/examples/data/icon.png",
+          scale: 0.25,
+          src: "https://cdn-icons-png.flaticon.com/128/4210/4210204.png",
         }),
       })
     );
@@ -105,14 +107,15 @@ const MapContainer = () => {
     const startLonLat = transform(start, "EPSG:3857", "EPSG:4326");
     const endLonLat = transform(end, "EPSG:3857", "EPSG:4326");
 
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLonLat[0]},${startLonLat[1]};${endLonLat[0]},${endLonLat[1]}?overview=full&geometries=geojson`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLonLat[0]},${startLonLat[1]};${endLonLat[0]},${endLonLat[1]}?overview=full&geometries=geojson&steps=true`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.routes && data.routes.length > 0) {
-        const routeCoords = data.routes[0].geometry.coordinates.map((coord) =>
+        const route = data.routes[0];
+        const routeCoords = route.geometry.coordinates.map((coord) =>
           fromLonLat(coord)
         );
         const lineString = new LineString(routeCoords);
@@ -132,7 +135,16 @@ const MapContainer = () => {
         );
 
         setRoute(routeFeature);
-        setDistance(data.routes[0].distance / 1000); //公里
+        setDistance(route.distance / 1000); //公里
+
+        const instructions = route.legs[0].steps.map((step) => ({
+          instruction: step.maneuver.instruction,
+          distance: step.distance,
+          duration: step.duration,
+        }));
+        console.log(instructions);
+        setRouteInstructions(instructions);
+
         updateMapLayers([...markers, { feature: routeFeature, id: "route" }]);
       }
     } catch (error) {
@@ -178,7 +190,8 @@ const MapContainer = () => {
       new Style({
         image: new Icon({
           anchor: [0.5, 1],
-          src: "https://openlayers.org/en/latest/examples/data/icon.png",
+          scale: 0.25,
+          src: "https://cdn-icons-png.flaticon.com/128/4210/4210204.png",
         }),
         text: new Text({
           text: updatedMarker.title,
@@ -204,18 +217,31 @@ const MapContainer = () => {
   return (
     <div className="map-container">
       <div ref={mapElement} className="map"></div>
-      <button className="mark-button" onClick={toggleMarking}>
-        {isMarking ? "取消標記" : "開始標記"}
-      </button>
-      {markers.length === 2 && !route && (
-        <button className="route-button" onClick={calculateRoute}>
-          計算路線
+      <div className="dashboard">
+        <button className="mark-button" onClick={toggleMarking}>
+          {isMarking ? "取消標記" : "開始標記"}
         </button>
-      )}
+        {markers.length === 2 && !route && (
+          <button className="route-button" onClick={calculateRoute}>
+            計算路線
+          </button>
+        )}
+      </div>
+
       {route && (
         <div className="route-info">
           <p>距離: {distance.toFixed(2)} km</p>
           <button onClick={clearRoute}>清除路線</button>
+          <h3>路線指示：</h3>
+          <ul>
+            {routeInstructions.map((instruction, index) => (
+              <li key={index}>
+                {instruction.instruction} (距離:
+                {(instruction.distance / 1000).toFixed(2)} km, 預計時間:
+                {Math.round(instruction.duration / 60)} 分鐘)
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       {editingMarker && (
