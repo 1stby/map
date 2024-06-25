@@ -89,7 +89,10 @@ const MapContainer = () => {
       { feature: newMarker, id, title: "", description: "" },
     ];
     setMarkers(updatedMarkers);
-    updateMapLayers(updatedMarkers);
+    updateMapLayers([
+      ...updatedMarkers,
+      ...(route ? [{ feature: route, id: "route" }] : []),
+    ]);
   };
   //刪除標記
   const deleteMarker = (markerId) => {
