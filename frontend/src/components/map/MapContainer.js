@@ -224,8 +224,11 @@ const MapContainer = () => {
         {route ? (
           <>
             <h2>總距離: {distance.toFixed(2)} km</h2>
-            <button onClick={clearRoute}>清除路線</button>
             <p> 目前所在道路：{routeInstructions[0]?.name || "未知"}</p>
+            <p>
+              目的地：
+              {routeInstructions[routeInstructions.length - 1]?.name || "未知"}
+            </p>
             <h3>路線指示：</h3>
             <ul>
               {routeInstructions.slice(1, -1).map((instruction, index) => (
@@ -235,10 +238,6 @@ const MapContainer = () => {
                 </li>
               ))}
             </ul>
-            <p>
-              目的地：
-              {routeInstructions[routeInstructions.length - 1]?.name || "未知"}
-            </p>
           </>
         ) : (
           <p className={styles.remind}>請計算路線以顯示詳細信息</p>
@@ -250,9 +249,15 @@ const MapContainer = () => {
         <button className={styles.markButton} onClick={toggleMarking}>
           {isMarking ? "取消標記" : "開始標記"}
         </button>
-        {markers.length === 2 && !route && (
+        {markers.length !== 2 ? (
+          <div className={styles.message}>請標記兩個點</div>
+        ) : !route ? (
           <button className={styles.routeButton} onClick={calculateRoute}>
             計算路線
+          </button>
+        ) : (
+          <button className={styles.delectRoute} onClick={clearRoute}>
+            清除路線
           </button>
         )}
       </div>
