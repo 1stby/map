@@ -8,6 +8,7 @@ import VectorSource from "ol/source/Vector";
 import { Point, LineString } from "ol/geom";
 import { Feature } from "ol";
 import { Style, Icon, Text, Fill, Stroke } from "ol/style";
+
 import "ol/ol.css";
 import styles from "./MapStyles.module.css";
 
@@ -138,12 +139,15 @@ const MapContainer = () => {
         setDistance(route.distance / 1000); //公里
 
         const instructions = route.legs[0].steps.map((step) => ({
-          instruction: step.maneuver.instruction,
+          name: step.name,
+          driving: step.maneuver.modifier,
           distance: step.distance,
-          duration: step.duration,
         }));
-        console.log(instructions);
+
+        console.log(route.legs[0]);
+        console.log(route);
         setRouteInstructions(instructions);
+        console.log(instructions);
 
         updateMapLayers([...markers, { feature: routeFeature, id: "route" }]);
       }
@@ -195,7 +199,7 @@ const MapContainer = () => {
         }),
         text: new Text({
           text: updatedMarker.title,
-          offsetY: -15,
+          offsetY: -10,
           fill: new Fill({
             color: "#000",
           }),
@@ -216,6 +220,31 @@ const MapContainer = () => {
 
   return (
     <div className={styles.mapContainer}>
+      <div className={styles.routeInfo}>
+        {route ? (
+          <>
+            <h2>總距離: {distance.toFixed(2)} km</h2>
+            <button onClick={clearRoute}>清除路線</button>
+            <p> 目前所在道路：{routeInstructions[0]?.name || "未知"}</p>
+            <h3>路線指示：</h3>
+            <ul>
+              {routeInstructions.slice(1, -1).map((instruction, index) => (
+                <li key={index}>
+                  道路名稱：{instruction.name || "道路未命名"}(turn{" "}
+                  {instruction.driving})
+                </li>
+              ))}
+            </ul>
+            <p>
+              目的地：
+              {routeInstructions[routeInstructions.length - 1]?.name || "未知"}
+            </p>
+          </>
+        ) : (
+          <p className={styles.remind}>請計算路線以顯示詳細信息</p>
+        )}
+      </div>
+
       <div ref={mapElement} className={styles.map}></div>
       <div className={styles.dashBoard}>
         <button className={styles.markButton} onClick={toggleMarking}>
@@ -228,22 +257,6 @@ const MapContainer = () => {
         )}
       </div>
 
-      {route && (
-        <div className={styles.routeInfo}>
-          <p>距離: {distance.toFixed(2)} km</p>
-          <button onClick={clearRoute}>清除路線</button>
-          <h3>路線指示：</h3>
-          <ul>
-            {routeInstructions.map((instruction, index) => (
-              <li key={index}>
-                {instruction.instruction} (距離:
-                {(instruction.distance / 1000).toFixed(2)} km, 預計時間:
-                {Math.round(instruction.duration / 60)} 分鐘)
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
       {editingMarker && (
         <MarkerDescription
           marker={editingMarker}
