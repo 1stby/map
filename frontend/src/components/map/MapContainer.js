@@ -7,10 +7,28 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Point, LineString } from "ol/geom";
 import { Feature } from "ol";
+//style
 import { Style, Icon, Text, Fill, Stroke } from "ol/style";
 
+import {
+  Container,
+  Box,
+  Flex,
+  Heading,
+  IconButton,
+  Input,
+  Textarea,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionIcon,
+  AccordionPanel,
+  Button,
+} from "@chakra-ui/react";
+import { Text as ChakraText } from "@chakra-ui/react";
+
+import { MapPin, Route, Trash2 } from "lucide-react";
 import "ol/ol.css";
-import styles from "./MapStyles.module.css";
 
 const MapContainer = () => {
   const [map, setMap] = useState();
@@ -46,6 +64,7 @@ const MapContainer = () => {
     const handleClick = (e) => {
       if (isMarking) {
         const clickCoord = map.getCoordinateFromPixel(e.pixel);
+        console.log(clickCoord);
         addMarker(clickCoord);
         setIsMarking(false);
       } else {
@@ -147,10 +166,10 @@ const MapContainer = () => {
           distance: step.distance,
         }));
 
-        console.log(route.legs[0]);
-        console.log(route);
+        // console.log(route.legs[0]);
+        // console.log(route);
         setRouteInstructions(instructions);
-        console.log(instructions);
+        // console.log(instructions);
 
         updateMapLayers([...markers, { feature: routeFeature, id: "route" }]);
       }
@@ -222,58 +241,129 @@ const MapContainer = () => {
   };
 
   return (
-    <div className={styles.mapContainer}>
-      <div className={styles.routeInfo}>
-        {route ? (
-          <>
-            <h2>總距離: {distance.toFixed(2)} km</h2>
-            <p> 目前所在道路：{routeInstructions[0]?.name || "未知"}</p>
-            <p>
-              目的地：
-              {routeInstructions[routeInstructions.length - 1]?.name || "未知"}
-            </p>
-            <h3>路線指示：</h3>
-            <ul>
-              {routeInstructions.slice(1, -1).map((instruction, index) => (
-                <li key={index}>
-                  道路名稱：{instruction.name || "道路未命名"}(turn{" "}
-                  {instruction.driving})
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className={styles.remind}>請計算路線以顯示詳細信息</p>
-        )}
-      </div>
+    <Container maxW="container.xl" p={0}>
+      <Flex h="100vh" w="100%">
+        <Flex
+          direction="column"
+          w="300px"
+          me="12px"
+          bg="white"
+          boxShadow="md"
+          zIndex={1}
+          overflowY="auto"
+        >
+          {/* 這裡放置你的側邊欄內容 */}
+          <Box p={4} bg="gray.100" m={4}>
+            {route ? (
+              <>
+                <Heading size="lg" mb={4}>
+                  總距離: {distance.toFixed(2)} km
+                </Heading>
+                <ChakraText fontSize="20px">
+                  起點：{routeInstructions[0]?.name || "未知"}
+                </ChakraText>
 
-      <div ref={mapElement} className={styles.map}></div>
-      <div className={styles.dashBoard}>
-        <button className={styles.markButton} onClick={toggleMarking}>
-          {isMarking ? "取消標記" : "開始標記"}
-        </button>
-        {markers.length !== 2 ? (
-          <div className={styles.message}>請標記兩個點</div>
-        ) : !route ? (
-          <button className={styles.routeButton} onClick={calculateRoute}>
-            計算路線
-          </button>
-        ) : (
-          <button className={styles.delectRoute} onClick={clearRoute}>
-            清除路線
-          </button>
-        )}
-      </div>
+                <Accordion defaultIndex={[0]} allowMultiple>
+                  <AccordionItem>
+                    <h2>
+                      <AccordionButton>
+                        <Box as="span" flex="1" textAlign="left">
+                          路線規劃：
+                        </Box>
+                        <AccordionIcon />
+                      </AccordionButton>
+                    </h2>
+                    <AccordionPanel pb={4}>
+                      <ul>
+                        {routeInstructions
+                          .slice(1, -1)
+                          .map((instruction, index) => (
+                            <li key={index}>
+                              道路名稱：{instruction.name || "道路未命名"}(turn{" "}
+                              {instruction.driving})
+                            </li>
+                          ))}
+                      </ul>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
 
-      {editingMarker && (
-        <MarkerDescription
-          marker={editingMarker}
-          onSave={saveMarkerDescription}
-          onCancel={() => setEditingMarker(null)}
-          onDelete={deleteMarker}
-        />
-      )}
-    </div>
+                <ChakraText fontSize="20px">
+                  終點：
+                  {routeInstructions[routeInstructions.length - 1]?.name ||
+                    "未知"}
+                </ChakraText>
+              </>
+            ) : (
+              <p>請計算路線以顯示詳細信息</p>
+            )}
+          </Box>
+          <Box p={4}>
+            {editingMarker && (
+              <MarkerDescription
+                marker={editingMarker}
+                onSave={saveMarkerDescription}
+                onCancel={() => setEditingMarker(null)}
+                onDelete={deleteMarker}
+              />
+            )}
+          </Box>
+          {/* 可以添加更多的Box組件來放置其他內容 */}
+        </Flex>
+        <Box flex="1" position="relative">
+          <Flex
+            alignItems="Center"
+            position="absolute"
+            zIndex={2}
+            bg="gray.100"
+            h="40px"
+            w="500px"
+            left="20%"
+            top={5}
+            p={4}
+          >
+            <Box mr={4}>
+              <button onClick={toggleMarking}>
+                {isMarking ? (
+                  <IconButton
+                    aria-label="Marker"
+                    icon={<MapPin color="#f50000" />}
+                  ></IconButton>
+                ) : (
+                  <IconButton
+                    aria-label="Marker"
+                    icon={<MapPin />}
+                  ></IconButton>
+                )}
+              </button>
+            </Box>
+            <Box>
+              {!route ? (
+                <IconButton
+                  aria-label="Route"
+                  icon={<Route />}
+                  onClick={calculateRoute}
+                ></IconButton>
+              ) : (
+                <IconButton
+                  aria-label="DeleteRoute"
+                  icon={<Trash2 color="#ff0000" onClick={clearRoute} />}
+                ></IconButton>
+              )}
+            </Box>
+          </Flex>
+          <Box
+            ref={mapElement}
+            h="100%"
+            position="abstract"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+          />
+        </Box>
+      </Flex>
+    </Container>
   );
 };
 
@@ -291,26 +381,35 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
     }
   };
   return (
-    <div className={styles.markerDescription}>
-      <h3>編輯標記</h3>
+    <Flex flexDirection="column" justifyContent="center">
+      <Heading textAlign="center" mb={2}>
+        <Input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          variant="flushed"
+          placeholder="標題"
+        />
+      </Heading>
 
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="標題"
-      />
-      <textarea
+      <Textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="描述內容"
       />
-      <button onClick={handleSave}>保存</button>
-      <button onClick={onCancel}>取消</button>
-      <button onClick={handleDelete} className={styles.deleteButton}>
+      <Flex justifyContent="center" mt={4}>
+        <Button flex={1} me={2} onClick={handleSave}>
+          保存
+        </Button>
+        <Button flex={1} onClick={onCancel}>
+          取消
+        </Button>
+      </Flex>
+
+      <Button mt={2} colorScheme="red" onClick={handleDelete}>
         刪除標記
-      </button>
-    </div>
+      </Button>
+    </Flex>
   );
 };
 
