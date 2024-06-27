@@ -24,10 +24,15 @@ import {
   AccordionIcon,
   AccordionPanel,
   Button,
+  List,
+  ListItem,
+  ListIcon,
+  Badge,
+  Divider,
 } from "@chakra-ui/react";
 import { Text as ChakraText } from "@chakra-ui/react";
 
-import { MapPin, Route, Trash2 } from "lucide-react";
+import { MapPin, Route, Trash2, CornerUpRight } from "lucide-react";
 import "ol/ol.css";
 
 const MapContainer = () => {
@@ -36,8 +41,8 @@ const MapContainer = () => {
   const [isMarking, setIsMarking] = useState(false);
   const [editingMarker, setEditingMarker] = useState(null);
   const [route, setRoute] = useState(null);
-  const [distance, setDistance] = useState(null);
-  const [routeInstructions, setRouteInstructions] = useState([]);
+  const [processedRouteData, setProcessedRouteData] = useState(null);
+
   const mapElement = useRef();
 
   useEffect(() => {
@@ -64,7 +69,6 @@ const MapContainer = () => {
     const handleClick = (e) => {
       if (isMarking) {
         const clickCoord = map.getCoordinateFromPixel(e.pixel);
-        console.log(clickCoord);
         addMarker(clickCoord);
         setIsMarking(false);
       } else {
@@ -122,15 +126,19 @@ const MapContainer = () => {
   };
   //建立路線
   const calculateRoute = async () => {
-    if (markers.length !== 2) return;
+    if (markers.length < 2) return;
 
-    const start = markers[0].feature.getGeometry().getCoordinates();
-    const end = markers[1].feature.getGeometry().getCoordinates();
+    const coordinates = markers.map((marker) =>
+      transform(
+        marker.feature.getGeometry().getCoordinates(),
+        "EPSG:3857",
+        "EPSG:4326"
+      )
+    );
 
-    const startLonLat = transform(start, "EPSG:3857", "EPSG:4326");
-    const endLonLat = transform(end, "EPSG:3857", "EPSG:4326");
-
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLonLat[0]},${startLonLat[1]};${endLonLat[0]},${endLonLat[1]}?overview=full&geometries=geojson&steps=true`;
+    let url = "https://router.project-osrm.org/route/v1/driving/";
+    url += coordinates.map((coord) => `${coord[0]},${coord[1]}`).join(";");
+    url += "?overview=full&geometries=geojson&steps=true";
 
     try {
       const response = await fetch(url);
@@ -158,18 +166,12 @@ const MapContainer = () => {
         );
 
         setRoute(routeFeature);
-        setDistance(route.distance / 1000); //公里
 
-        const instructions = route.legs[0].steps.map((step) => ({
-          name: step.name,
-          driving: step.maneuver.modifier,
-          distance: step.distance,
-        }));
+        console.log(route);
+        const processedData = processRouteData(route);
 
-        // console.log(route.legs[0]);
-        // console.log(route);
-        setRouteInstructions(instructions);
-        // console.log(instructions);
+        setProcessedRouteData(processedData);
+        console.log(processedData);
 
         updateMapLayers([...markers, { feature: routeFeature, id: "route" }]);
       }
@@ -177,10 +179,30 @@ const MapContainer = () => {
       console.error("計算路線發生錯誤:", error);
     }
   };
+
+  //處理路線數據
+  const processRouteData = (route) => {
+    return {
+      legs: route.legs.map((leg, index) => ({
+        index,
+        startPoint: leg.steps[0].maneuver.location,
+        endPoint: leg.steps[leg.steps.length - 1].maneuver.location,
+        distance: leg.distance,
+        duration: leg.duration,
+        steps: leg.steps.map((step) => ({
+          distance: step.distance,
+          duration: step.duration,
+          name: step.name,
+          drivingSide: step.maneuver.modifier,
+        })),
+      })),
+      totalDistance: route.distance,
+      totalDuration: route.duration,
+    };
+  };
   //清除路線
   const clearRoute = () => {
     setRoute(null);
-    setDistance(null);
     updateMapLayers(markers);
   };
 
@@ -236,6 +258,17 @@ const MapContainer = () => {
     updateMapLayers(updatedMarkers);
   };
 
+  //方向處裡
+  const drivingSide = (drivingSide) => {
+    const turn = ["right", "left", "slight right", "slight left"];
+    if (
+      turn.some((condition) => drivingSide.toLowerCase().includes(condition))
+    ) {
+      return `turn ${drivingSide}`;
+    }
+    return drivingSide;
+  };
+
   const toggleMarking = () => {
     setIsMarking(!isMarking);
   };
@@ -256,46 +289,104 @@ const MapContainer = () => {
           <Box p={4} bg="gray.100" m={4}>
             {route ? (
               <>
-                <Heading size="lg" mb={4}>
-                  總距離: {distance.toFixed(2)} km
+                <Heading size="lg" mb={2}>
+                  路線概覽
                 </Heading>
-                <ChakraText fontSize="20px">
-                  起點：{routeInstructions[0]?.name || "未知"}
-                </ChakraText>
+                <Flex justify="space-between" align="center">
+                  <Box>
+                    <ChakraText fontSize="xl" fontWeight="bold">
+                      總距離:
+                      {(processedRouteData.totalDistance / 1000).toFixed(2)} KM
+                    </ChakraText>
+                    <ChakraText fontSize="lg">
+                      預計時間:{" "}
+                      {(processedRouteData.totalDuration / 60).toFixed(0)} 分鐘
+                    </ChakraText>
+                  </Box>
+                  <Badge colorScheme="green" p={2} borderRadius="md">
+                    {processedRouteData.legs.length} 個路段
+                  </Badge>
+                </Flex>
+
+                <Divider />
+
+                <Box>
+                  <ChakraText fontSize="md" fontWeight="bold">
+                    起點: {processedRouteData.legs[0].startPoint}
+                  </ChakraText>
+                </Box>
 
                 <Accordion defaultIndex={[0]} allowMultiple>
                   <AccordionItem>
                     <h2>
                       <AccordionButton>
                         <Box as="span" flex="1" textAlign="left">
-                          路線規劃：
+                          <ChakraText
+                            fontSize="md"
+                            fontWeight="bold"
+                            color="red"
+                          >
+                            詳細路線訊息：
+                          </ChakraText>
                         </Box>
                         <AccordionIcon />
                       </AccordionButton>
                     </h2>
                     <AccordionPanel pb={4}>
-                      <ul>
-                        {routeInstructions
-                          .slice(1, -1)
-                          .map((instruction, index) => (
-                            <li key={index}>
-                              道路名稱：{instruction.name || "道路未命名"}(turn{" "}
-                              {instruction.driving})
-                            </li>
-                          ))}
-                      </ul>
+                      <List>
+                        {processedRouteData.legs.map((leg, index) => (
+                          <ListItem key={index}>
+                            <ChakraText fontWeight="bold">
+                              路段 {index + 1}
+                            </ChakraText>
+                            <ChakraText fontSize="sm">
+                              距離: {(leg.distance / 1000).toFixed(2)} 公里
+                            </ChakraText>
+                            <ChakraText fontSize="sm">
+                              時間: {(leg.duration / 60).toFixed(0)} 分鐘
+                            </ChakraText>
+                            <List>
+                              {leg.steps.map((step, stepIndex) => (
+                                <ListItem key={stepIndex}>
+                                  <Flex align="center">
+                                    <ListIcon
+                                      as={CornerUpRight}
+                                      color="blue.500"
+                                    />
+                                    <ChakraText fontSize="sm">
+                                      {step.name || "新路"}
+                                      <ChakraText color="tomato">
+                                        {step.drivingSide
+                                          ? drivingSide(step.drivingSide)
+                                          : ""}
+                                      </ChakraText>
+                                      - {step.distance.toFixed(0)}公尺 /{" "}
+                                      {(step.duration / 60).toFixed(1)}分鐘
+                                    </ChakraText>
+                                  </Flex>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </ListItem>
+                        ))}
+                      </List>
                     </AccordionPanel>
                   </AccordionItem>
                 </Accordion>
-
-                <ChakraText fontSize="20px">
-                  終點：
-                  {routeInstructions[routeInstructions.length - 1]?.name ||
-                    "未知"}
-                </ChakraText>
+                <Box>
+                  {" "}
+                  <ChakraText fontSize="md" fontWeight="bold">
+                    終點:{" "}
+                    {
+                      processedRouteData.legs[
+                        processedRouteData.legs.length - 1
+                      ].endPoint
+                    }
+                  </ChakraText>
+                </Box>
               </>
             ) : (
-              <p>請計算路線以顯示詳細信息</p>
+              <p>路線規劃</p>
             )}
           </Box>
           <Box p={4}>
