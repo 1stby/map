@@ -14,15 +14,11 @@ import {
   Box,
   Flex,
   Heading,
-  IconButton,
-  Input,
-  Textarea,
   Accordion,
   AccordionItem,
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
-  Button,
   List,
   ListItem,
   ListIcon,
@@ -30,10 +26,11 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { Text as ChakraText } from "@chakra-ui/react";
-import { MapPin, Route, Trash2, CornerUpRight, CircleX } from "lucide-react";
+import { CornerUpRight } from "lucide-react";
 import "ol/ol.css";
 
 import MarkerDescription from "./MarkerDescription";
+import ControlPanel from "./ControlPanel";
 
 const MapContainer = () => {
   const [map, setMap] = useState();
@@ -438,46 +435,15 @@ const MapContainer = () => {
           )}
         </Box>
         <Box flex="1" position="relative">
-          <Flex
-            alignItems="Center"
-            position="absolute"
-            zIndex={2}
-            bg="gray.100"
-            h="40px"
-            w="500px"
-            left="20%"
-            top={5}
-            p={4}
-          >
-            <Box me={2}>
-              <IconButton
-                aria-label="Marker"
-                icon={<MapPin color={isMarking ? "#f50000" : "currentColor"} />}
-                onClick={toggleMarking}
-              ></IconButton>
-            </Box>
-            <Box me={2}>
-              {!route ? (
-                <IconButton
-                  aria-label="Route"
-                  icon={<Route />}
-                  onClick={calculateRoute}
-                ></IconButton>
-              ) : (
-                <IconButton
-                  aria-label="DeleteRoute"
-                  icon={<Trash2 color="#ff0000" onClick={clearRoute} />}
-                ></IconButton>
-              )}
-            </Box>
-            <Box me={2}>
-              <IconButton
-                aria-label="Delete"
-                icon={<CircleX color="#ff3333" />}
-                onClick={clearAll}
-              ></IconButton>
-            </Box>
-          </Flex>
+          <ControlPanel
+            isMarking={isMarking}
+            toggleMarking={toggleMarking}
+            //確保是布林值
+            hasRoute={!!route}
+            clearRoute={clearRoute}
+            calculateRoute={calculateRoute}
+            clearAll={clearAll}
+          />
           <Box
             ref={mapElement}
             h="100%"
