@@ -9,28 +9,12 @@ import { Point, LineString } from "ol/geom";
 import { Feature } from "ol";
 //style
 import { Style, Icon, Text, Fill, Stroke } from "ol/style";
-import {
-  Container,
-  Box,
-  Flex,
-  Heading,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionIcon,
-  AccordionPanel,
-  List,
-  ListItem,
-  ListIcon,
-  Badge,
-  Divider,
-} from "@chakra-ui/react";
-import { Text as ChakraText } from "@chakra-ui/react";
-import { CornerUpRight, Loader, MapPin } from "lucide-react";
+import { Container, Box, Flex } from "@chakra-ui/react";
 import "ol/ol.css";
 
 import MarkerDescription from "./MarkerDescription";
 import ControlPanel from "./ControlPanel";
+import Sidebar from "./Sidebar";
 
 const MapContainer = () => {
   const [map, setMap] = useState();
@@ -294,17 +278,6 @@ const MapContainer = () => {
     updateMapLayers(updatedMarkers);
   };
 
-  //方向處裡
-  const drivingSide = (drivingSide) => {
-    const turn = ["right", "left", "slight right", "slight left"];
-    if (
-      turn.some((condition) => drivingSide.toLowerCase().includes(condition))
-    ) {
-      return `turn ${drivingSide}`;
-    }
-    return drivingSide;
-  };
-
   const toggleMarking = () => {
     setIsMarking(!isMarking);
   };
@@ -312,9 +285,8 @@ const MapContainer = () => {
   return (
     <Container maxW="container.xl" p={0}>
       <Flex h="100vh" w="100%">
-        <Flex
+        <Box
           position="absolute"
-          direction="column"
           w="320px"
           maxHeight="80%"
           me="12px"
@@ -323,105 +295,13 @@ const MapContainer = () => {
           zIndex={1}
           overflowY="auto"
         >
-          {/* 這裡放置你的側邊欄內容 */}
-          <Box p={4} bg="gray.100" m={4}>
-            {isLoading ? (
-              <Flex align="center">
-                <Loader />
-                <ChakraText ml={2}>路線計算中</ChakraText>
-              </Flex>
-            ) : route && processedRouteData ? (
-              <>
-                <Heading size="lg" mb={2}>
-                  路線概覽
-                </Heading>
-                <Flex justify="space-between" align="center">
-                  <Box>
-                    <ChakraText fontSize="xl" fontWeight="bold">
-                      總距離:
-                      {(processedRouteData.totalDistance / 1000).toFixed(2)} KM
-                    </ChakraText>
-                    <ChakraText fontSize="lg">
-                      預計時間:{" "}
-                      {(processedRouteData.totalDuration / 60).toFixed(0)} 分鐘
-                    </ChakraText>
-                  </Box>
-                  <Badge colorScheme="green" p={2} borderRadius="md">
-                    {processedRouteData.legs.length} 個路段
-                  </Badge>
-                </Flex>
+          <Sidebar
+            isLoading={isLoading}
+            route={route}
+            processedRouteData={processedRouteData}
+          ></Sidebar>
+        </Box>
 
-                <Divider />
-
-                {processedRouteData.legs.map((leg, index) => (
-                  <Accordion key={index} defaultIndex={[]} allowMultiple>
-                    <AccordionItem>
-                      <AccordionButton>
-                        <Box as="span" flex="1" textAlign="left">
-                          <ChakraText fontWeight="bold">
-                            {leg.startName}
-                          </ChakraText>
-                          <ChakraText fontSize="xs">
-                            距離: {(leg.distance / 1000).toFixed(2)} 公里 /
-                            時間: {(leg.duration / 60).toFixed(0)} 分鐘
-                          </ChakraText>
-                        </Box>
-                        <AccordionIcon />
-                      </AccordionButton>
-
-                      <AccordionPanel pb={4}>
-                        <List>
-                          <ListItem key={index}>
-                            <List>
-                              {leg.steps.map((step, stepIndex) => (
-                                <ListItem key={stepIndex}>
-                                  <Flex align="center">
-                                    <ListIcon
-                                      as={CornerUpRight}
-                                      color="blue.500"
-                                    />
-                                    <ChakraText fontSize="sm">
-                                      {step.name || "新路"}
-                                      <ChakraText color="tomato">
-                                        {step.drivingSide
-                                          ? drivingSide(step.drivingSide)
-                                          : ""}
-                                      </ChakraText>
-                                      - {step.distance.toFixed(0)}公尺 /{" "}
-                                      {(step.duration / 60).toFixed(1)}分鐘
-                                    </ChakraText>
-                                  </Flex>
-                                </ListItem>
-                              ))}
-                            </List>
-                          </ListItem>
-                        </List>
-                      </AccordionPanel>
-                    </AccordionItem>
-                  </Accordion>
-                ))}
-
-                <Box>
-                  <Heading size="md" pt={2}>
-                    目的地：{" "}
-                  </Heading>
-                  <Divider />
-                  <ChakraText fontSize="md" fontWeight="bold" ps={4} pt={2}>
-                    {
-                      processedRouteData.legs[
-                        processedRouteData.legs.length - 1
-                      ].endName
-                    }
-                  </ChakraText>
-                </Box>
-              </>
-            ) : (
-              <Heading textAlign="center">路線規劃</Heading>
-            )}
-          </Box>
-
-          {/* 可以添加更多的Box組件來放置其他內容 */}
-        </Flex>
         <Box
           position="absolute"
           zIndex={2}
