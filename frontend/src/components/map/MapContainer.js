@@ -42,6 +42,7 @@ const MapContainer = () => {
   const [editingMarker, setEditingMarker] = useState(null);
   const [route, setRoute] = useState(null);
   const [processedRouteData, setProcessedRouteData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const mapElement = useRef();
 
@@ -128,6 +129,8 @@ const MapContainer = () => {
   const calculateRoute = async () => {
     if (markers.length < 2) return;
 
+    setIsLoading(true);
+
     const coordinates = markers.map((marker) =>
       transform(
         marker.feature.getGeometry().getCoordinates(),
@@ -167,41 +170,71 @@ const MapContainer = () => {
 
         setRoute(routeFeature);
 
-        console.log(route);
-        const processedData = processRouteData(route);
-
-        setProcessedRouteData(processedData);
+        // console.log(route);
+        const processedData = await processRouteData(route);
         console.log(processedData);
+        setProcessedRouteData(processedData);
 
         updateMapLayers([...markers, { feature: routeFeature, id: "route" }]);
       }
     } catch (error) {
       console.error("計算路線發生錯誤:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   //處理路線數據
-  const processRouteData = (route) => {
+  const processRouteData = async (route) => {
+    const latAndLonConversion = await Promise.all(
+      route.legs.map(async (leg, index) => {
+        const startPoint = leg.steps[0].maneuver.location;
+        const endPoint = leg.steps[leg.steps.length - 1].maneuver.location;
+
+        const startName = await reverseGeocode(startPoint[1], startPoint[0]);
+        const endName = await reverseGeocode(endPoint[1], endPoint[0]);
+
+        return {
+          index,
+          startName,
+          endName,
+          distance: leg.distance,
+          duration: leg.duration,
+          steps: leg.steps.map((step) => ({
+            distance: step.distance,
+            duration: step.duration,
+            name: step.name,
+            drivingSide: step.maneuver.modifier,
+          })),
+        };
+      })
+    );
     return {
-      legs: route.legs.map((leg, index) => ({
-        index,
-        startPoint: leg.steps[0].maneuver.location,
-        endPoint: leg.steps[leg.steps.length - 1].maneuver.location,
-        distance: leg.distance,
-        duration: leg.duration,
-        steps: leg.steps.map((step) => ({
-          distance: step.distance,
-          duration: step.duration,
-          name: step.name,
-          drivingSide: step.maneuver.modifier,
-        })),
-      })),
+      legs: latAndLonConversion,
       totalDistance: route.distance,
       totalDuration: route.duration,
     };
   };
+
+  //使用Nominatim API 經緯度轉換為城市名
+  const reverseGeocode = async (lat, lon) => {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      const addressSplit = data.display_name.split(", ");
+      const taiwanIndex = addressSplit.findIndex((str) => str === "臺灣");
+      const deleteAddress = addressSplit.slice(0, taiwanIndex - 1);
+      const reverseAddress = deleteAddress.reverse().join("");
+      return reverseAddress || "未知地點";
+    } catch (error) {
+      console.log("反向地理編碼錯誤", error);
+    }
+  };
+
   //清除路線
   const clearRoute = () => {
+    setProcessedRouteData(null);
     setRoute(null);
     updateMapLayers(markers);
   };
@@ -278,7 +311,7 @@ const MapContainer = () => {
       <Flex h="100vh" w="100%">
         <Flex
           direction="column"
-          w="300px"
+          w="320px"
           me="12px"
           bg="white"
           boxShadow="md"
@@ -287,7 +320,9 @@ const MapContainer = () => {
         >
           {/* 這裡放置你的側邊欄內容 */}
           <Box p={4} bg="gray.100" m={4}>
-            {route ? (
+            {isLoading ? (
+              <ChakraText>路線計算中...</ChakraText>
+            ) : route && processedRouteData ? (
               <>
                 <Heading size="lg" mb={2}>
                   路線概覽
@@ -310,41 +345,25 @@ const MapContainer = () => {
 
                 <Divider />
 
-                <Box>
-                  <ChakraText fontSize="md" fontWeight="bold">
-                    起點: {processedRouteData.legs[0].startPoint}
-                  </ChakraText>
-                </Box>
-
-                <Accordion defaultIndex={[0]} allowMultiple>
-                  <AccordionItem>
-                    <h2>
+                {processedRouteData.legs.map((leg, index) => (
+                  <Accordion key={index} defaultIndex={[]} allowMultiple>
+                    <AccordionItem>
                       <AccordionButton>
                         <Box as="span" flex="1" textAlign="left">
-                          <ChakraText
-                            fontSize="md"
-                            fontWeight="bold"
-                            color="red"
-                          >
-                            詳細路線訊息：
+                          <ChakraText fontWeight="bold">
+                            {leg.startName}
+                          </ChakraText>
+                          <ChakraText fontSize="xs">
+                            距離: {(leg.distance / 1000).toFixed(2)} 公里 /
+                            時間: {(leg.duration / 60).toFixed(0)} 分鐘
                           </ChakraText>
                         </Box>
                         <AccordionIcon />
                       </AccordionButton>
-                    </h2>
-                    <AccordionPanel pb={4}>
-                      <List>
-                        {processedRouteData.legs.map((leg, index) => (
+
+                      <AccordionPanel pb={4}>
+                        <List>
                           <ListItem key={index}>
-                            <ChakraText fontWeight="bold">
-                              路段 {index + 1}
-                            </ChakraText>
-                            <ChakraText fontSize="sm">
-                              距離: {(leg.distance / 1000).toFixed(2)} 公里
-                            </ChakraText>
-                            <ChakraText fontSize="sm">
-                              時間: {(leg.duration / 60).toFixed(0)} 分鐘
-                            </ChakraText>
                             <List>
                               {leg.steps.map((step, stepIndex) => (
                                 <ListItem key={stepIndex}>
@@ -368,25 +387,27 @@ const MapContainer = () => {
                               ))}
                             </List>
                           </ListItem>
-                        ))}
-                      </List>
-                    </AccordionPanel>
-                  </AccordionItem>
-                </Accordion>
+                        </List>
+                      </AccordionPanel>
+                    </AccordionItem>
+                  </Accordion>
+                ))}
+
                 <Box>
-                  {" "}
-                  <ChakraText fontSize="md" fontWeight="bold">
-                    終點:{" "}
+                  <Heading size="md" pt={2}>
+                    目的地：{" "}
+                  </Heading>
+                  <ChakraText fontSize="md" fontWeight="bold" ps={4} pt={2}>
                     {
                       processedRouteData.legs[
                         processedRouteData.legs.length - 1
-                      ].endPoint
+                      ].endName
                     }
                   </ChakraText>
                 </Box>
               </>
             ) : (
-              <p>路線規劃</p>
+              <ChakraText>路線規劃</ChakraText>
             )}
           </Box>
           <Box p={4}>
@@ -414,19 +435,11 @@ const MapContainer = () => {
             p={4}
           >
             <Box mr={4}>
-              <button onClick={toggleMarking}>
-                {isMarking ? (
-                  <IconButton
-                    aria-label="Marker"
-                    icon={<MapPin color="#f50000" />}
-                  ></IconButton>
-                ) : (
-                  <IconButton
-                    aria-label="Marker"
-                    icon={<MapPin />}
-                  ></IconButton>
-                )}
-              </button>
+              <IconButton
+                aria-label="Marker"
+                icon={<MapPin color={isMarking ? "#f50000" : "currentColor"} />}
+                onClick={toggleMarking}
+              ></IconButton>
             </Box>
             <Box>
               {!route ? (
