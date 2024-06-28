@@ -23,19 +23,10 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
     }
   };
   return (
-    <Box
-      bg="white"
-      borderRadius="lg"
-      boxShadow="md"
-      maxWidth="400px"
-      width="100%"
-      borderWidth={1}
-      borderColor="gray.200"
-      p={2}
-    >
+    <Box bg="white" width="100%" p={4}>
       <VStack spacing={4} align="stretch">
         <Heading textAlign="center" as="h3" size="md">
-          編輯標記
+          旅遊小卡
         </Heading>
         <Input
           value={title}

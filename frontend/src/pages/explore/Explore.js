@@ -1,15 +1,11 @@
-import MapContainer from "../../components/map/MapContainer";
-import Navbar from "../../components/navbar/Navbar";
-
-import { useState } from "react";
+import MapContainer from "../../components/Map/MapContainer";
+import Layout from "../../components/Layout/Layout";
 
 const Explore = () => {
   return (
-    <>
-      <Navbar />
-
+    <Layout>
       <MapContainer />
-    </>
+    </Layout>
   );
 };
 

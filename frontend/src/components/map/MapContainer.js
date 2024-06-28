@@ -26,7 +26,7 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { Text as ChakraText } from "@chakra-ui/react";
-import { CornerUpRight } from "lucide-react";
+import { CornerUpRight, Loader, MapPin } from "lucide-react";
 import "ol/ol.css";
 
 import MarkerDescription from "./MarkerDescription";
@@ -53,7 +53,7 @@ const MapContainer = () => {
       ],
       view: new View({
         center: fromLonLat([120.846642, 23.488793]),
-        zoom: 7.5,
+        zoom: 8.4,
       }),
     });
 
@@ -313,8 +313,10 @@ const MapContainer = () => {
     <Container maxW="container.xl" p={0}>
       <Flex h="100vh" w="100%">
         <Flex
+          position="absolute"
           direction="column"
           w="320px"
+          maxHeight="80%"
           me="12px"
           bg="white"
           boxShadow="md"
@@ -324,7 +326,10 @@ const MapContainer = () => {
           {/* 這裡放置你的側邊欄內容 */}
           <Box p={4} bg="gray.100" m={4}>
             {isLoading ? (
-              <ChakraText>路線計算中...</ChakraText>
+              <Flex align="center">
+                <Loader />
+                <ChakraText ml={2}>路線計算中</ChakraText>
+              </Flex>
             ) : route && processedRouteData ? (
               <>
                 <Heading size="lg" mb={2}>
@@ -411,7 +416,7 @@ const MapContainer = () => {
                 </Box>
               </>
             ) : (
-              <ChakraText>路線規劃</ChakraText>
+              <Heading textAlign="center">路線規劃</Heading>
             )}
           </Box>
 
@@ -420,10 +425,13 @@ const MapContainer = () => {
         <Box
           position="absolute"
           zIndex={2}
-          left="50%"
+          left="45%"
           top="40%"
           bg="#E2E8F0"
-          borderRadius="xl"
+          borderRadius="lg"
+          boxShadow="md"
+          borderWidth={2}
+          borderColor="gray.200"
         >
           {editingMarker && (
             <MarkerDescription

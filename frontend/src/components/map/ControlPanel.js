@@ -41,9 +41,9 @@ const ControlPanel = ({
         />
       </Tooltip>
 
-      <Tooltip label="清除所有" placement="bottom">
+      <Tooltip label="清除" placement="bottom">
         <IconButton
-          aria-label="清除所有"
+          aria-label="清除"
           icon={<CircleX color="#ff3333" />}
           onClick={clearAll}
         />
