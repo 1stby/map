@@ -9,7 +9,6 @@ import { Point, LineString } from "ol/geom";
 import { Feature } from "ol";
 //style
 import { Style, Icon, Text, Fill, Stroke } from "ol/style";
-
 import {
   Container,
   Box,
@@ -30,11 +29,11 @@ import {
   Badge,
   Divider,
 } from "@chakra-ui/react";
-
 import { Text as ChakraText } from "@chakra-ui/react";
-
 import { MapPin, Route, Trash2, CornerUpRight, CircleX } from "lucide-react";
 import "ol/ol.css";
+
+import MarkerDescription from "./MarkerDescription";
 
 const MapContainer = () => {
   const [map, setMap] = useState();
@@ -491,52 +490,6 @@ const MapContainer = () => {
         </Box>
       </Flex>
     </Container>
-  );
-};
-
-//標點描述的組件
-const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
-  const [title, setTitle] = useState(marker.title || "");
-  const [description, setDescription] = useState(marker.description || "");
-
-  const handleSave = () => {
-    onSave({ ...marker, title, description });
-  };
-  const handleDelete = () => {
-    if (window.confirm("確定刪除這個標記嗎？")) {
-      onDelete(marker.id);
-    }
-  };
-  return (
-    <Flex flexDirection="column" justifyContent="center" p={4}>
-      <Heading textAlign="center" mb={2}>
-        <Input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          variant="flushed"
-          placeholder="標題"
-        />
-      </Heading>
-
-      <Textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="描述內容"
-      />
-      <Flex justifyContent="center" mt={4}>
-        <Button flex={1} me={2} onClick={handleSave}>
-          保存
-        </Button>
-        <Button flex={1} onClick={onCancel}>
-          取消
-        </Button>
-      </Flex>
-
-      <Button mt={2} colorScheme="red" onClick={handleDelete}>
-        刪除標記
-      </Button>
-    </Flex>
   );
 };
 
