@@ -275,7 +275,10 @@ const MapContainer = () => {
       })
     );
 
-    updateMapLayers(updatedMarkers);
+    updateMapLayers(
+      updatedMarkers,
+      ...(route ? [{ feature: route, id: "route" }] : [])
+    );
   };
 
   const toggleMarking = () => {
