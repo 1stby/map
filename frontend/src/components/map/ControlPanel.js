@@ -11,15 +11,17 @@ const ControlPanel = ({
 }) => {
   return (
     <Flex
-      alignItems="Center"
+      alignItems="center"
       position="absolute"
       zIndex={2}
-      bg="gray.100"
-      h="40px"
-      w="500px"
-      left="20%"
+      bg="white"
+      boxShadow="md"
+      borderRadius="md"
+      h="50px"
+      left="50%"
+      transform="translateX(-50%)"
       top={5}
-      p={4}
+      p={2}
     >
       <Tooltip label="新增標記" placement="bottom">
         <IconButton
@@ -29,6 +31,7 @@ const ControlPanel = ({
           me={2}
         />
       </Tooltip>
+
       <Tooltip label={hasRoute ? "清除路線" : "計算路線"} placement="bottom">
         <IconButton
           aria-label={hasRoute ? "清除路線" : "計算路線"}
