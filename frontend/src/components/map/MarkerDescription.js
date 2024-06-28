@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Box, Flex, Heading, Input, Textarea, Button } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  Heading,
+  Input,
+  Textarea,
+  Button,
+  ButtonGroup,
+  Divider,
+} from "@chakra-ui/react";
 
 const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
   const [title, setTitle] = useState(marker.title || "");
@@ -14,35 +23,51 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
     }
   };
   return (
-    <Flex flexDirection="column" justifyContent="center" p={4}>
-      <Heading textAlign="center" mb={2}>
+    <Box
+      bg="white"
+      borderRadius="lg"
+      boxShadow="md"
+      maxWidth="400px"
+      width="100%"
+      borderWidth={1}
+      borderColor="gray.200"
+      p={2}
+    >
+      <VStack spacing={4} align="stretch">
+        <Heading textAlign="center" as="h3" size="md">
+          編輯標記
+        </Heading>
         <Input
-          type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           variant="flushed"
-          placeholder="標題"
+          size="md"
         />
-      </Heading>
 
-      <Textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="描述內容"
-      />
-      <Flex justifyContent="center" mt={4}>
-        <Button flex={1} me={2} onClick={handleSave}>
-          保存
-        </Button>
-        <Button flex={1} onClick={onCancel}>
-          取消
-        </Button>
-      </Flex>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="描述內容"
+          size="md"
+          variant="filled"
+          rows={4}
+        />
+        <ButtonGroup spacing={3} width="100%">
+          <Button colorScheme="blue" onClick={handleSave} flex={1}>
+            保存
+          </Button>
+          <Button variant="outline" onClick={onCancel} flex={1}>
+            取消
+          </Button>
+        </ButtonGroup>
 
-      <Button mt={2} colorScheme="red" onClick={handleDelete}>
-        刪除標記
-      </Button>
-    </Flex>
+        <Divider />
+
+        <Button colorScheme="red" onClick={handleDelete} width="100%">
+          刪除標記
+        </Button>
+      </VStack>
+    </Box>
   );
 };
 
