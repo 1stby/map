@@ -30,9 +30,10 @@ import {
   Badge,
   Divider,
 } from "@chakra-ui/react";
+
 import { Text as ChakraText } from "@chakra-ui/react";
 
-import { MapPin, Route, Trash2, CornerUpRight } from "lucide-react";
+import { MapPin, Route, Trash2, CornerUpRight, CircleX } from "lucide-react";
 import "ol/ol.css";
 
 const MapContainer = () => {
@@ -238,6 +239,12 @@ const MapContainer = () => {
     setRoute(null);
     updateMapLayers(markers);
   };
+  //清除
+  const clearAll = () => {
+    setMarkers([]);
+    console.log(markers);
+    updateMapLayers(markers);
+  };
 
   const updateMapLayers = (markersToUpdate) => {
     const vectorSource = new VectorSource({
@@ -397,6 +404,7 @@ const MapContainer = () => {
                   <Heading size="md" pt={2}>
                     目的地：{" "}
                   </Heading>
+                  <Divider />
                   <ChakraText fontSize="md" fontWeight="bold" ps={4} pt={2}>
                     {
                       processedRouteData.legs[
@@ -410,18 +418,26 @@ const MapContainer = () => {
               <ChakraText>路線規劃</ChakraText>
             )}
           </Box>
-          <Box p={4}>
-            {editingMarker && (
-              <MarkerDescription
-                marker={editingMarker}
-                onSave={saveMarkerDescription}
-                onCancel={() => setEditingMarker(null)}
-                onDelete={deleteMarker}
-              />
-            )}
-          </Box>
+
           {/* 可以添加更多的Box組件來放置其他內容 */}
         </Flex>
+        <Box
+          position="absolute"
+          zIndex={2}
+          left="50%"
+          top="40%"
+          bg="#E2E8F0"
+          borderRadius="xl"
+        >
+          {editingMarker && (
+            <MarkerDescription
+              marker={editingMarker}
+              onSave={saveMarkerDescription}
+              onCancel={() => setEditingMarker(null)}
+              onDelete={deleteMarker}
+            />
+          )}
+        </Box>
         <Box flex="1" position="relative">
           <Flex
             alignItems="Center"
@@ -434,14 +450,14 @@ const MapContainer = () => {
             top={5}
             p={4}
           >
-            <Box mr={4}>
+            <Box me={2}>
               <IconButton
                 aria-label="Marker"
                 icon={<MapPin color={isMarking ? "#f50000" : "currentColor"} />}
                 onClick={toggleMarking}
               ></IconButton>
             </Box>
-            <Box>
+            <Box me={2}>
               {!route ? (
                 <IconButton
                   aria-label="Route"
@@ -454,6 +470,13 @@ const MapContainer = () => {
                   icon={<Trash2 color="#ff0000" onClick={clearRoute} />}
                 ></IconButton>
               )}
+            </Box>
+            <Box me={2}>
+              <IconButton
+                aria-label="Delete"
+                icon={<CircleX color="#ff3333" />}
+                onClick={clearAll}
+              ></IconButton>
             </Box>
           </Flex>
           <Box
@@ -485,7 +508,7 @@ const MarkerDescription = ({ marker, onSave, onCancel, onDelete }) => {
     }
   };
   return (
-    <Flex flexDirection="column" justifyContent="center">
+    <Flex flexDirection="column" justifyContent="center" p={4}>
       <Heading textAlign="center" mb={2}>
         <Input
           type="text"
