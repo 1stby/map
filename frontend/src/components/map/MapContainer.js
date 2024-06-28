@@ -290,9 +290,9 @@ const MapContainer = () => {
       <Flex h="100vh" w="100%">
         <Box
           position="absolute"
+          left="0"
           w="320px"
           maxHeight="80%"
-          me="12px"
           bg="white"
           boxShadow="md"
           zIndex={1}
@@ -308,8 +308,8 @@ const MapContainer = () => {
         <Box
           position="absolute"
           zIndex={2}
-          left="45%"
-          top="40%"
+          right="0"
+          // top="40%"
           bg="#E2E8F0"
           borderRadius="lg"
           boxShadow="md"
