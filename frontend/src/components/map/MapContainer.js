@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState } from "react";
 import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
+import XYZ from "ol/source/XYZ";
+
 import { fromLonLat, transform } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -28,11 +30,18 @@ const MapContainer = () => {
   const mapElement = useRef();
 
   useEffect(() => {
+    const thunderforestKey = "2e860100ee4646f0afae42c64ab8380a";
+
     const initialMap = new Map({
       target: mapElement.current,
       layers: [
+        // new TileLayer({
+        //   source: new OSM(),
+        // }),
         new TileLayer({
-          source: new OSM(),
+          source: new XYZ({
+            url: `https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=${thunderforestKey}`,
+          }),
         }),
       ],
       view: new View({
