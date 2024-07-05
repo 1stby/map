@@ -27,13 +27,7 @@ const Sidebar = ({ isLoading, route, processedRouteData }) => {
   }
 
   if (!route && !processedRouteData) {
-    return (
-      <Box>
-        {/* <Heading textAlign="center" size="xl">
-          路線規劃
-        </Heading> */}
-      </Box>
-    );
+    return null;
   }
 
   return (
@@ -81,9 +75,9 @@ const Sidebar = ({ isLoading, route, processedRouteData }) => {
                             <ListIcon as={CornerUpRight} color="blue.500" />
                             <ChakraText fontSize="sm">
                               {step.name || "新路"}
-                              <ChakraText color="tomato">
+                              <Box as="span" color="tomato">
                                 {step.drivingSide}
-                              </ChakraText>
+                              </Box>
                               - {step.distance.toFixed(0)}公尺 /{" "}
                               {(step.duration / 60).toFixed(1)}分鐘
                             </ChakraText>
