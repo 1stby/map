@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile";
-import OSM from "ol/source/OSM";
+// import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
 
 import { fromLonLat, transform } from "ol/proj";
@@ -19,7 +19,7 @@ import ControlPanel from "./ControlPanel";
 import Sidebar from "./Sidebar";
 
 const MapContainer = () => {
-  const [map, setMap] = useState();
+  const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState([]);
   const [isMarking, setIsMarking] = useState(false);
   const [editingMarker, setEditingMarker] = useState(null);
@@ -98,15 +98,26 @@ const MapContainer = () => {
       })
     );
 
-    const updatedMarkers = [
-      ...markers,
-      { feature: newMarker, id, title: "", description: "" },
-    ];
-    setMarkers(updatedMarkers);
-    updateMapLayers([
-      ...updatedMarkers,
-      ...(route ? [{ feature: route, id: "route" }] : []),
-    ]);
+    setMarkers((prevMarkers) => {
+      const updatedMarkers = [
+        ...prevMarkers,
+        {
+          feature: newMarker,
+          id,
+          title: "",
+          description: "",
+          coordinate: coord,
+        },
+      ];
+
+      // 更新地圖圖層
+      updateMapLayers([
+        ...updatedMarkers,
+        ...(route ? [{ feature: route, id: "route" }] : []),
+      ]);
+
+      return updatedMarkers;
+    });
   };
   //刪除標記
   const deleteMarker = (markerId) => {
@@ -118,9 +129,7 @@ const MapContainer = () => {
   //建立路線
   const calculateRoute = async () => {
     if (markers.length < 2) return;
-
     setIsLoading(true);
-
     const coordinates = markers.map((marker) =>
       transform(
         marker.feature.getGeometry().getCoordinates(),
@@ -160,7 +169,7 @@ const MapContainer = () => {
 
         setRoute(routeFeature);
 
-        // console.log(route);
+        console.log(route);
         const processedData = await processRouteData(route);
         console.log(processedData);
         setProcessedRouteData(processedData);
@@ -183,7 +192,6 @@ const MapContainer = () => {
 
         const startName = await reverseGeocode(startPoint[1], startPoint[0]);
         const endName = await reverseGeocode(endPoint[1], endPoint[0]);
-
         return {
           index,
           startName,
@@ -199,6 +207,7 @@ const MapContainer = () => {
         };
       })
     );
+
     return {
       legs: latAndLonConversion,
       totalDistance: route.distance,
@@ -228,30 +237,38 @@ const MapContainer = () => {
     setRoute(null);
     updateMapLayers(markers);
   };
-  //清除
+  //清除所有事件
   const clearAll = () => {
     setMarkers([]);
-    console.log(markers);
-    updateMapLayers(markers);
+    setProcessedRouteData(null);
+    setRoute(null);
+    updateMapLayers([]);
   };
 
-  const updateMapLayers = (markersToUpdate) => {
-    const vectorSource = new VectorSource({
-      features: markersToUpdate.map((m) => m.feature),
-    });
+  //更新圖層
+  const updateMapLayers = (features) => {
+    if (!map) return;
 
-    const vectorLayer = new VectorLayer({
-      source: vectorSource,
-    });
-
+    // 移除圖層
     map
       .getLayers()
       .getArray()
       .filter((layer) => layer instanceof VectorLayer)
       .forEach((layer) => map.removeLayer(layer));
 
+    // 重新創建圖層
+    const vectorSource = new VectorSource({
+      features: features.map((f) => f.feature),
+    });
+
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+    });
+
+    // 添加新的圖層
     map.addLayer(vectorLayer);
   };
+
   //標點的描述
   const saveMarkerDescription = (updatedMarker) => {
     const updatedMarkers = markers.map((m) =>
@@ -294,6 +311,82 @@ const MapContainer = () => {
     setIsMarking(!isMarking);
   };
 
+  //重新排序
+  const handleReorderLegs = async (sourceIndex, destinationIndex) => {
+    // 更新 processedRouteData 中的 legs 順序
+    const newLegs = Array.from(processedRouteData.legs);
+    const [reorderedLeg] = newLegs.splice(sourceIndex, 1);
+    newLegs.splice(destinationIndex, 0, reorderedLeg);
+
+    // 更新 markers 順序
+    const newMarkers = [...markers];
+    const [reorderedMarker] = newMarkers.splice(sourceIndex, 1);
+    newMarkers.splice(destinationIndex, 0, reorderedMarker);
+
+    setProcessedRouteData((prevData) => ({
+      ...prevData,
+      legs: newLegs,
+    }));
+    setMarkers(newMarkers);
+
+    updateMapLayers(newMarkers);
+
+    setIsLoading(true);
+
+    try {
+      const coordinates = newMarkers.map((marker) =>
+        transform(
+          marker.feature.getGeometry().getCoordinates(),
+          "EPSG:3857",
+          "EPSG:4326"
+        )
+      );
+
+      let url = "https://router.project-osrm.org/route/v1/driving/";
+      url += coordinates.map((coord) => `${coord[0]},${coord[1]}`).join(";");
+      url += "?overview=full&geometries=geojson&steps=true";
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const routeCoords = route.geometry.coordinates.map((coord) =>
+          fromLonLat(coord)
+        );
+        const lineString = new LineString(routeCoords);
+
+        const routeFeature = new Feature({
+          geometry: lineString,
+          name: "Route",
+        });
+
+        routeFeature.setStyle(
+          new Style({
+            stroke: new Stroke({
+              color: "#66c2a5",
+              width: 4,
+            }),
+          })
+        );
+
+        setRoute(routeFeature);
+
+        const processedData = await processRouteData(route);
+        setProcessedRouteData(processedData);
+
+        updateMapLayers([
+          ...newMarkers,
+          { feature: routeFeature, id: "route" },
+        ]);
+      }
+    } catch (error) {
+      console.error("計算路線錯誤:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Container maxW="container.xl" p={0}>
       <Flex h="100vh" w="100%">
@@ -311,6 +404,8 @@ const MapContainer = () => {
             isLoading={isLoading}
             route={route}
             processedRouteData={processedRouteData}
+            onReorderLegs={handleReorderLegs}
+            marker={markers}
           ></Sidebar>
         </Box>
 

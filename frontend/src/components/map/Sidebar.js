@@ -1,3 +1,5 @@
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+
 import {
   Flex,
   Box,
@@ -16,7 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { Text as ChakraText } from "@chakra-ui/react";
 import { Loader, CornerUpRight } from "lucide-react";
-const Sidebar = ({ isLoading, route, processedRouteData }) => {
+
+const Sidebar = ({ isLoading, route, processedRouteData, onReorderLegs }) => {
   if (isLoading) {
     return (
       <Flex align="center" p={4} bg="gray.100" m={4}>
@@ -29,6 +32,11 @@ const Sidebar = ({ isLoading, route, processedRouteData }) => {
   if (!route && !processedRouteData) {
     return null;
   }
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    onReorderLegs(result.source.index, result.destination.index);
+  };
 
   return (
     <Box bg="gray.100" m={4} p={4}>
@@ -50,48 +58,85 @@ const Sidebar = ({ isLoading, route, processedRouteData }) => {
         </Badge>
       </Flex>
 
-      <VStack spacing={4} align="stretch" mt={2}>
-        {processedRouteData.legs.map((leg, index) => (
-          <Accordion key={index} defaultIndex={[]} allowMultiple>
-            <AccordionItem>
-              <AccordionButton>
-                <Box as="span" flex="1" textAlign="left">
-                  <ChakraText fontWeight="bold">{leg.startName}</ChakraText>
-                  <ChakraText fontSize="xs">
-                    距離: {(leg.distance / 1000).toFixed(2)} 公里 / 時間:
-                    {(leg.duration / 60).toFixed(0)} 分鐘
-                  </ChakraText>
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="legs">
+          {(provided) => (
+            <VStack
+              spacing={4}
+              align="stretch"
+              mt={2}
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+            >
+              <Accordion defaultIndex={[]} allowMultiple>
+                {processedRouteData.legs.map((leg, index) => (
+                  <Draggable
+                    key={`leg-${leg.duration.toString()}`}
+                    draggableId={`leg-${leg.duration.toString()}`}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <AccordionItem>
+                          <AccordionButton>
+                            <Box as="span" flex="1" textAlign="left">
+                              <ChakraText fontWeight="bold">
+                                {leg.startName}
+                              </ChakraText>
+                              <ChakraText fontSize="xs">
+                                距離: {(leg.distance / 1000).toFixed(2)} 公里 /
+                                時間: {(leg.duration / 60).toFixed(0)} 分鐘
+                              </ChakraText>
+                            </Box>
+                            <AccordionIcon />
+                          </AccordionButton>
 
-              <AccordionPanel pb={4}>
-                <List>
-                  <ListItem key={index}>
-                    <List>
-                      {leg.steps.map((step, stepIndex) => (
-                        <ListItem key={stepIndex}>
-                          <Flex align="center">
-                            <ListIcon as={CornerUpRight} color="blue.500" />
-                            <ChakraText fontSize="sm">
-                              {step.name || "新路"}
-                              <Box as="span" color="tomato">
-                                {step.drivingSide}
-                              </Box>
-                              - {step.distance.toFixed(0)}公尺 /{" "}
-                              {(step.duration / 60).toFixed(1)}分鐘
-                            </ChakraText>
-                          </Flex>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </ListItem>
-                </List>
-              </AccordionPanel>
-            </AccordionItem>
-          </Accordion>
-        ))}
-      </VStack>
+                          <AccordionPanel pb={4}>
+                            <List>
+                              <ListItem key={index}>
+                                <List>
+                                  {leg.steps.map((step, stepIndex) => (
+                                    <ListItem key={stepIndex}>
+                                      <Flex align="center">
+                                        <ListIcon
+                                          as={CornerUpRight}
+                                          color="blue.500"
+                                        />
+                                        <Box>
+                                          <ChakraText as="span">
+                                            {step.name || "新路"}
+                                          </ChakraText>{" "}
+                                          <ChakraText as="span" color="tomato">
+                                            {step.drivingSide}
+                                          </ChakraText>
+                                          <Box mb={2}>
+                                            - {step.distance.toFixed(0)}公尺 /{" "}
+                                            {(step.duration / 60).toFixed(1)}
+                                            分鐘
+                                          </Box>
+                                        </Box>
+                                      </Flex>
+                                    </ListItem>
+                                  ))}
+                                </List>
+                              </ListItem>
+                            </List>
+                          </AccordionPanel>
+                        </AccordionItem>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+              </Accordion>
+              {provided.placeholder}
+            </VStack>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       <Box>
         <Heading size="md" pt={2}>
