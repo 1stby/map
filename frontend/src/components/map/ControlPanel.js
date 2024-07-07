@@ -1,5 +1,6 @@
 import { Flex, IconButton, Tooltip } from "@chakra-ui/react";
 import { MapPin, Route, Trash2, CircleX } from "lucide-react";
+import SaveButton from "./ui/SaveButton";
 
 const ControlPanel = ({
   isMarking,
@@ -8,6 +9,7 @@ const ControlPanel = ({
   clearRoute,
   calculateRoute,
   clearAll,
+  saveData,
 }) => {
   return (
     <Flex
@@ -46,8 +48,10 @@ const ControlPanel = ({
           aria-label="清除"
           icon={<CircleX color="#ff3333" />}
           onClick={clearAll}
+          me={2}
         />
       </Tooltip>
+      <SaveButton saveData={saveData} />
     </Flex>
   );
 };

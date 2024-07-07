@@ -3,7 +3,6 @@ import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 // import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
-
 import { fromLonLat, transform } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -301,14 +300,35 @@ const MapContainer = () => {
       })
     );
 
-    updateMapLayers(
-      updatedMarkers,
-      ...(route ? [{ feature: route, id: "route" }] : [])
-    );
+    updateMapLayers([
+      ...updatedMarkers,
+      ...(route ? [{ feature: route, id: "route" }] : []),
+    ]);
   };
 
   const toggleMarking = () => {
     setIsMarking(!isMarking);
+  };
+
+  const saveData = () => {
+    const dataToSave = {
+      markers: markers.map((marker) => ({
+        id: marker.id,
+        title: marker.title,
+        description: marker.description,
+        coordinate: marker.coordinate,
+      })),
+      route: route
+        ? {
+            geometry: route.getGeometry().getCoordinates(),
+            totalDistance: processedRouteData?.totalDistance,
+            totalDuration: processedRouteData?.totalDuration,
+          }
+        : null,
+      processedRouteData,
+    };
+
+    console.log("Data：", dataToSave);
   };
 
   //重新排序
@@ -438,6 +458,7 @@ const MapContainer = () => {
             clearRoute={clearRoute}
             calculateRoute={calculateRoute}
             clearAll={clearAll}
+            saveData={saveData}
           />
           <Box
             ref={mapElement}
