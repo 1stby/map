@@ -16,6 +16,7 @@ import "ol/ol.css";
 import MarkerDescription from "./MarkerDescription";
 import ControlPanel from "./ControlPanel";
 import Sidebar from "./Sidebar";
+import MapModal from "./MapModal";
 
 const MapContainer = () => {
   const [map, setMap] = useState(null);
@@ -25,6 +26,7 @@ const MapContainer = () => {
   const [route, setRoute] = useState(null);
   const [processedRouteData, setProcessedRouteData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const mapElement = useRef();
 
@@ -50,7 +52,15 @@ const MapContainer = () => {
     });
 
     setMap(initialMap);
-    return () => initialMap.setTarget(null);
+
+    const time = setTimeout(() => {
+      setIsOpen(true);
+    }, 1500);
+
+    return () => {
+      initialMap.setTarget(null);
+      clearTimeout(time);
+    };
   }, []);
 
   useEffect(() => {
@@ -78,6 +88,18 @@ const MapContainer = () => {
     map.on("click", handleClick);
     return () => map.un("click", handleClick);
   }, [map, isMarking, markers]);
+
+  //地點搜尋
+  const handleLocationSubmit = (lat, lon) => {
+    if (map) {
+      const view = map.getView();
+      view.animate({
+        center: fromLonLat([lon, lat]),
+        zoom: 18,
+        duration: 1000,
+      });
+    }
+  };
 
   //新增標記
   const addMarker = (coord) => {
@@ -310,7 +332,7 @@ const MapContainer = () => {
     setIsMarking(!isMarking);
   };
 
-  const saveData = () => {
+  const saveData = async () => {
     const dataToSave = {
       markers: markers.map((marker) => ({
         id: marker.id,
@@ -327,8 +349,26 @@ const MapContainer = () => {
         : null,
       processedRouteData,
     };
-
     console.log("Data：", dataToSave);
+
+    try {
+      const response = await fetch("http://localhost:3001/api/save-map-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataToSave),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("資料成功保存到後端", data);
+    } catch (err) {
+      console.log("儲存發生錯誤：", err);
+    }
   };
 
   //重新排序
@@ -468,7 +508,13 @@ const MapContainer = () => {
             left={0}
             right={0}
             bottom={0}
-          />
+          >
+            <MapModal
+              isOpen={isOpen}
+              onClose={() => setIsOpen(false)}
+              onLocationSubmit={handleLocationSubmit}
+            />
+          </Box>
         </Box>
       </Flex>
     </Container>
