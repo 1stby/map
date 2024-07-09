@@ -17,6 +17,7 @@ import MarkerDescription from "./MarkerDescription";
 import ControlPanel from "./ControlPanel";
 import Sidebar from "./Sidebar";
 import MapModal from "./MapModal";
+import SearchLocation from "./ui/SearchLocation";
 
 const MapContainer = () => {
   const [map, setMap] = useState(null);
@@ -137,6 +138,7 @@ const MapContainer = () => {
         ...(route ? [{ feature: route, id: "route" }] : []),
       ]);
 
+      setEditingMarker(true);
       return updatedMarkers;
     });
   };
@@ -263,6 +265,7 @@ const MapContainer = () => {
     setMarkers([]);
     setProcessedRouteData(null);
     setRoute(null);
+    setEditingMarker(null);
     updateMapLayers([]);
   };
 
@@ -509,6 +512,9 @@ const MapContainer = () => {
             right={0}
             bottom={0}
           >
+            <Box position="absolute" zIndex={1} top="4rem" left="0.5rem">
+              <SearchLocation onSearch={handleLocationSubmit} />
+            </Box>
             <MapModal
               isOpen={isOpen}
               onClose={() => setIsOpen(false)}
