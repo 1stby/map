@@ -8,15 +8,20 @@ const Navbar = () => {
         <Flex justifyContent={"space-between"} alignItems={"center"}>
           <Box>Logo</Box>
           <Spacer />
-          <Box>
+          <Box lineHeight="3rem">
             <Link to="/">
               <Button colorScheme="blue" variant="ghost" mr={4}>
                 Home
               </Button>
             </Link>
+            <Link to="/plan">
+              <Button colorScheme="blue" variant="ghost" mr={4}>
+                規劃
+              </Button>
+            </Link>
             <Link to="/explore">
               <Button colorScheme="blue" variant="ghost" mr={4}>
-                Explore
+                探索
               </Button>
             </Link>
             <Link to="/login">
