@@ -18,6 +18,7 @@ import ControlPanel from "./ControlPanel";
 import Sidebar from "./Sidebar";
 import MapModal from "./MapModal";
 import SearchLocation from "./ui/SearchLocation";
+import PlanSelector from "./PlanSelector";
 
 const MapContainer = () => {
   const [map, setMap] = useState(null);
@@ -28,6 +29,7 @@ const MapContainer = () => {
   const [processedRouteData, setProcessedRouteData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [planCoords, setPlanCoords] = useState([]);
 
   const mapElement = useRef();
 
@@ -70,7 +72,9 @@ const MapContainer = () => {
     const handleClick = (e) => {
       if (isMarking) {
         const clickCoord = map.getCoordinateFromPixel(e.pixel);
-        addMarker(clickCoord);
+        const lonLatCoord = transform(clickCoord, "EPSG:3857", "EPSG:4326");
+        console.log("點擊獲得的座標：", lonLatCoord);
+        addMarker(lonLatCoord);
         setIsMarking(false);
       } else {
         const feature = map.forEachFeatureAtPixel(
@@ -106,7 +110,7 @@ const MapContainer = () => {
   const addMarker = (coord) => {
     const id = Date.now().toString();
     const newMarker = new Feature({
-      geometry: new Point(coord),
+      geometry: new Point(fromLonLat(coord)),
     });
 
     newMarker.setId(id);
@@ -450,6 +454,17 @@ const MapContainer = () => {
     }
   };
 
+  const handleCoordsUpdate = (newCoords) => {
+    setPlanCoords(newCoords);
+    console.log("PlanSelector子組件傳送的座標：", newCoords);
+    newCoords.forEach((coord) => {
+      if (coord.lat && coord.lon) {
+        const lonLatCoord = [coord.lon, coord.lat];
+        addMarker(lonLatCoord);
+      }
+    });
+  };
+
   return (
     <Container maxW="container.xl" p={0}>
       <Flex h="100vh" w="100%">
@@ -515,11 +530,16 @@ const MapContainer = () => {
             <Box position="absolute" zIndex={1} top="4rem" left="0.5rem">
               <SearchLocation onSearch={handleLocationSubmit} />
             </Box>
-            <MapModal
+            <PlanSelector
+              isOpen={isOpen}
+              onClose={() => setIsOpen(false)}
+              onCoordsUpdate={handleCoordsUpdate}
+            />
+            {/* <MapModal
               isOpen={isOpen}
               onClose={() => setIsOpen(false)}
               onLocationSubmit={handleLocationSubmit}
-            />
+            /> */}
           </Box>
         </Box>
       </Flex>
