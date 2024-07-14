@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import usePlanStore from "../../store/PlanStore";
 
 import {
   Heading,
@@ -24,53 +24,45 @@ import {
 } from "@chakra-ui/react";
 import { MapPin, Clock, X } from "lucide-react";
 
-const initialActivityState = {
-  name: "",
-  locations: [],
-  cost: "",
-  notes: "",
-  category: "",
-};
+const TravelPlan = () => {
+  const {
+    currentPlan,
+    updateCurrentPlan,
+    addLocation,
+    rmLocation,
+    savePlan,
+    plans,
+  } = usePlanStore();
 
-const TravelPlanner = () => {
-  const [activities, setActivities] = useState([initialActivityState]);
+  const [newLocation, setNewLocation] = useState({
+    locationName: "",
+    time: "",
+  });
 
-  const [currentLocation, setCurrentLocation] = useState("");
-  const [currentTime, setCurrentTime] = useState("");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    updateCurrentPlan({ [name]: value });
+  };
+
+  const handleLocationInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewLocation((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleAddLocation = () => {
-    if (currentLocation.trim() !== "") {
-      setActivities((prevActivities) => [
-        {
-          ...prevActivities[0],
-          locations: [
-            ...prevActivities[0].locations,
-            {
-              id: uuidv4(),
-              name: currentLocation,
-              time: currentTime,
-            },
-          ],
-        },
-      ]);
-      setCurrentLocation("");
-      setCurrentTime("");
+    if (newLocation.locationName.trim() !== "") {
+      addLocation(newLocation);
+      setNewLocation({ locationName: "", time: "" });
     }
   };
 
   const handleDeleteLocation = (id) => {
-    setActivities((prevActivities) => {
-      const currentActivity = prevActivities[0];
-      const updatedLocations = currentActivity.locations.filter(
-        (location) => location.id !== id
-      );
-      return [
-        {
-          ...currentActivity,
-          locations: updatedLocations,
-        },
-      ];
-    });
+    rmLocation(id);
+  };
+
+  const handleSavePlan = () => {
+    savePlan();
+    // console.log("All plans after saving:", plans);
   };
 
   return (
@@ -90,7 +82,11 @@ const TravelPlanner = () => {
               <VStack spacing={6} align="stretch">
                 <FormControl>
                   <FormLabel>活動名稱</FormLabel>
-                  <Input />
+                  <Input
+                    name="name"
+                    value={currentPlan.name}
+                    onChange={handleInputChange}
+                  />
                 </FormControl>
 
                 <Flex gap={4}>
@@ -100,20 +96,22 @@ const TravelPlanner = () => {
                         <FormLabel>時間</FormLabel>
                         <Input
                           type="time"
-                          value={currentTime}
-                          onChange={(e) => setCurrentTime(e.target.value)}
+                          name="time"
+                          value={newLocation.time}
+                          onChange={handleLocationInputChange}
                         />
                       </FormControl>
                       <FormControl mb={4}>
                         <FormLabel>地點</FormLabel>
                         <Input
-                          value={currentLocation}
-                          onChange={(e) => setCurrentLocation(e.target.value)}
+                          name="locationName"
+                          value={newLocation.locationName}
+                          onChange={handleLocationInputChange}
                         />
                       </FormControl>
                       <Button
                         onClick={handleAddLocation}
-                        isDisabled={!currentLocation}
+                        isDisabled={!newLocation.locationName}
                       >
                         添加景點
                       </Button>
@@ -123,14 +121,14 @@ const TravelPlanner = () => {
                   <Box flex={1}>
                     <FormLabel>已添加地點：</FormLabel>
                     <List spacing={3}>
-                      {activities[0].locations.map((location) => (
+                      {currentPlan.locations.map((location) => (
                         <ListItem
                           key={location.id}
                           display="flex"
                           alignItems="center"
                         >
                           <ListIcon as={MapPin} color="green.500" />
-                          <Text me={4}>{location.name}</Text>
+                          <Text me={4}>{location.locationName}</Text>
                           {location.time && (
                             <>
                               <ListIcon as={Clock} color="blue.500" ml={2} />
@@ -153,7 +151,11 @@ const TravelPlanner = () => {
 
                 <FormControl>
                   <FormLabel>花費</FormLabel>
-                  <Input />
+                  <Input
+                    name="cost"
+                    value={currentPlan.cost}
+                    onChange={handleInputChange}
+                  />
                 </FormControl>
 
                 <FormControl>
@@ -163,13 +165,25 @@ const TravelPlanner = () => {
 
                 <FormControl>
                   <FormLabel>筆記</FormLabel>
-                  <Textarea />
+                  <Textarea
+                    name="notes"
+                    value={currentPlan.notes}
+                    onChange={handleInputChange}
+                  />
                 </FormControl>
 
                 <FormControl>
                   <FormLabel>分類</FormLabel>
-                  <Input />
+                  <Input
+                    name="category"
+                    value={currentPlan.category}
+                    onChange={handleInputChange}
+                  />
                 </FormControl>
+
+                <Button colorScheme="blue" onClick={handleSavePlan}>
+                  保存計劃
+                </Button>
               </VStack>
             </TabPanel>
           </TabPanels>
@@ -179,4 +193,4 @@ const TravelPlanner = () => {
   );
 };
 
-export default TravelPlanner;
+export default TravelPlan;

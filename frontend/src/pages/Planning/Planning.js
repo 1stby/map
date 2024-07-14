@@ -1,9 +1,10 @@
 import Layout from "../../components/Layout/Layout";
-import TravelPlanner from "../../components/Plan/TravelPlanner";
+import TravelPlan from "../../components/Plan/TravelPlan";
+
 const Planning = () => {
   return (
     <Layout>
-      <TravelPlanner></TravelPlanner>
+      <TravelPlan></TravelPlan>
     </Layout>
   );
 };
